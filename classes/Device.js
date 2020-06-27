@@ -11,6 +11,36 @@ module.exports = function () {
         _this.data = data;
     };
 
+    var decorate = function (device) {
+        for (var key in device.features) {
+            var feature = device.features[key];
+            switch (key) {
+                case '--resolution':
+                    feature.values = ['50', '75', '100', '150', '200', '300', '600', '1200'];
+                    if (feature.options.indexOf('|') > -1) {
+                        feature.values = feature.options.split('|');
+                    }
+                    break;
+
+                case '-l':
+                case '-t':
+                case '-x':
+                case '-y':
+                    var options = feature.options.replace(/[a-z]/ig, '').split('..');
+                    feature.limits = [options[0], options[1]];
+                    break;
+
+                case '--brightness':
+                case '--contrast':
+                    var options = feature.options.split('%')[0].split('..');
+                    feature.limits = [options[0], options[1]];
+                    break;
+            }            
+        }
+
+        return device;
+    };
+
     /// Parses the response of scanimage -A into a dictionary
     var parse = function (response) {
         // find any number of spaces
@@ -82,10 +112,10 @@ module.exports = function () {
             return scanimageA().then(function (data) {
                 // Humans might read this, so pretty
                 conf.save(JSON.stringify(data, null, 4));
-                return data;
+                return decorate(data);
             });
         } else {
-            return Q.resolve(JSON.parse(conf.toText()));            
+            return Q.resolve(decorate(JSON.parse(conf.toText())));            
         }
     };
 
